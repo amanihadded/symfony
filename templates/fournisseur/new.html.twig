@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau fournisseur{% endblock %}
+
+{% block body %}
+<h1>Ajouter un fournisseur</h1>
+{{ form_start(form) }}
+{{ form_widget(form) }}
+{{ form_end(form) }}
+<a href="{{ path('fournisseur_index') }}" class="btn btn-secondary mt-2">Retour à la liste</a>
+{% endblock %}

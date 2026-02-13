@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ product.libelle }}{% endblock %}
+
+{% block body %}
+<h2>{{ product.libelle }}</h2>
+<p>Prix : {{ product.price }} €</p>
+<p>Catégorie : {{ product.category ? product.category.nom : 'Aucune' }}</p>
+<p>Fournisseur : {{ product.fournisseur ? product.fournisseur.nom : 'Aucun' }}</p>
+<a href="{{ path('product_index') }}" class="btn btn-secondary">Retour</a>
+<form method="post" action="{{ path('product_delete', {'id': product.id}) }}" style="display:inline;">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
+    <button class="btn btn-danger">Supprimer</button>
+</form>
+{% endblock %}

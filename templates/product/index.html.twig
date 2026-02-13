@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Liste des produits{% endblock %}
+
+{% block body %}
+<h1>Liste des produits</h1>
+<a href="{{ path('product_new') }}" class="btn btn-primary mb-3">Ajouter un produit</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Libellé</th>
+            <th>Prix</th>
+            <th>Catégorie</th>
+            <th>Fournisseur</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for product in products %}
+        <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.libelle }}</td>
+            <td>{{ product.price }} €</td>
+            <td>{{ product.category ? product.category.nom : '—' }}</td>
+            <td>{{ product.fournisseur ? product.fournisseur.nom : '—' }}</td>
+            <td>
+                <a href="{{ path('product_show', {'id': product.id}) }}" class="btn btn-info btn-sm">Voir</a>
+                <a href="{{ path('product_edit', {'id': product.id}) }}" class="btn btn-warning btn-sm">Modifier</a>
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6">Aucun produit trouvé.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

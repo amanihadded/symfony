@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fournisseur : {{ fournisseur.nom }}{% endblock %}
+
+{% block body %}
+<h1>Fournisseur : {{ fournisseur.nom }}</h1>
+<p><strong>Email :</strong> {{ fournisseur.email ?? 'Non renseigné' }}</p>
+<p><strong>Téléphone :</strong> {{ fournisseur.telephone ?? 'Non renseigné' }}</p>
+
+<h3>Produits de ce fournisseur</h3>
+{% if fournisseur.products|length > 0 %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Libellé</th>
+            <th>Prix</th>
+            <th>Catégorie</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in fournisseur.products %}
+        <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.libelle }}</td>
+            <td>{{ product.price }} €</td>
+            <td>{{ product.category ? product.category.nom : '—' }}</td>
+            <td>
+                <a href="{{ path('product_show', {id: product.id}) }}" class="btn btn-sm btn-info">Voir</a>
+                <a href="{{ path('product_edit', {id: product.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">Aucun produit pour ce fournisseur.</p>
+{% endif %}
+
+<a href="{{ path('fournisseur_index') }}" class="btn btn-secondary mt-3">Retour à la liste</a>
+{% endblock %}
