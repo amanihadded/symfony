@@ -1,42 +1,117 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Fournisseur : {{ fournisseur.nom }}{% endblock %}
+{% block title %}{{ fournisseur.nom }} — StockManager Pro{% endblock %}
 
 {% block body %}
-<h1>Fournisseur : {{ fournisseur.nom }}</h1>
-<p><strong>Email :</strong> {{ fournisseur.email ?? 'Non renseigné' }}</p>
-<p><strong>Téléphone :</strong> {{ fournisseur.telephone ?? 'Non renseigné' }}</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color:var(--text-primary)">{{ fournisseur.nom }}</h4>
+        <p class="mb-0" style="font-size:0.875rem;color:var(--text-muted)">Détails du fournisseur #{{ fournisseur.id }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ path('fournisseur_edit', {id: fournisseur.id}) }}" class="btn btn-primary"><i class="bi bi-pencil me-1"></i> Modifier</a>
+        <a href="{{ path('fournisseur_index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Retour</a>
+    </div>
+</div>
 
-<h3>Produits de ce fournisseur</h3>
-{% if fournisseur.products|length > 0 %}
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Libellé</th>
-            <th>Prix</th>
-            <th>Catégorie</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for product in fournisseur.products %}
-        <tr>
-            <td>{{ product.id }}</td>
-            <td>{{ product.libelle }}</td>
-            <td>{{ product.price }} €</td>
-            <td>{{ product.category ? product.category.nom : '—' }}</td>
-            <td>
-                <a href="{{ path('product_show', {id: product.id}) }}" class="btn btn-sm btn-info">Voir</a>
-                <a href="{{ path('product_edit', {id: product.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p class="text-muted">Aucun produit pour ce fournisseur.</p>
-{% endif %}
+<div class="row g-4">
+    {# Fournisseur Info Card #}
+    <div class="col-lg-4">
+        <div class="form-card">
+            <h5 class="fw-bold mb-3" style="color:var(--text-primary)"><i class="bi bi-person-badge me-2" style="color:var(--primary)"></i>Informations</h5>
+            <div class="mb-3">
+                <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">NOM</div>
+                <div class="fw-semibold">{{ fournisseur.nom }}</div>
+            </div>
+            <div class="mb-3">
+                <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">EMAIL</div>
+                <div>
+                    {% if fournisseur.email %}
+                        <a href="mailto:{{ fournisseur.email }}" class="text-decoration-none" style="color:var(--primary)">{{ fournisseur.email }}</a>
+                    {% else %}
+                        <span style="color:var(--text-muted)">Non renseigné</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mb-3">
+                <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">TÉLÉPHONE</div>
+                <div>{{ fournisseur.telephone ?? 'Non renseigné' }}</div>
+            </div>
+            <div>
+                <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">ADRESSE</div>
+                <div>{{ fournisseur.adresse ?? 'Non renseignée' }}</div>
+            </div>
+        </div>
+    </div>
 
-<a href="{{ path('fournisseur_index') }}" class="btn btn-secondary mt-3">Retour à la liste</a>
+    {# Products Table #}
+    <div class="col-lg-8">
+        <div class="table-card">
+            <div class="card-header">
+                <h5><i class="bi bi-box me-2"></i>Produits fournis</h5>
+                <span class="badge-purple">{{ fournisseur.products|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if fournisseur.products|length > 0 %}
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Nom</th>
+                            <th>Prix</th>
+                            <th>Catégorie</th>
+                            <th>Stock</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in fournisseur.products %}
+                        <tr>
+                            <td>
+                                {% if product.image %}
+                                    <img src="{{ asset('uploads/' ~ product.image) }}" class="img-thumb" alt="{{ product.libelle }}">
+                                {% else %}
+                                    <div class="img-placeholder"><i class="bi bi-image"></i></div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ path('product_show', {id: product.id}) }}" class="fw-semibold text-decoration-none" style="color:var(--text-primary)">{{ product.libelle }}</a>
+                            </td>
+                            <td class="fw-semibold">{{ product.price|number_format(2, ',', ' ') }} DT</td>
+                            <td>
+                                {% if product.category %}
+                                    <span class="badge-purple">{{ product.category.nom }}</span>
+                                {% else %}
+                                    <span style="color:var(--text-muted)">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.stock == 0 %}
+                                    <span class="badge-stock-out">Rupture</span>
+                                {% elseif product.stock <= 5 %}
+                                    <span class="badge-stock-low">{{ product.stock }}</span>
+                                {% else %}
+                                    <span class="badge-stock-ok">{{ product.stock }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <a href="{{ path('product_show', {id: product.id}) }}" class="btn-icon"><i class="bi bi-eye"></i></a>
+                                    <a href="{{ path('product_edit', {id: product.id}) }}" class="btn-icon btn-icon-warning"><i class="bi bi-pencil"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-5" style="color:var(--text-muted)">
+                    <i class="bi bi-inbox" style="font-size:2rem"></i>
+                    <p class="mt-2 mb-0">Aucun produit pour ce fournisseur</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

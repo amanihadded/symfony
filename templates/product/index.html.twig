@@ -1,38 +1,171 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Liste des produits{% endblock %}
+{% block title %}Produits — StockManager Pro{% endblock %}
 
 {% block body %}
-<h1>Liste des produits</h1>
-<a href="{{ path('product_new') }}" class="btn btn-primary mb-3">Ajouter un produit</a>
+{# ─── Page Header ─── #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color:var(--text-primary)">Produits</h4>
+        <p class="mb-0" style="font-size:0.875rem;color:var(--text-muted)">{{ totalProducts }} produit{{ totalProducts > 1 ? 's' : '' }} au total</p>
+    </div>
+    <a href="{{ path('product_new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nouveau produit
+    </a>
+</div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Libellé</th>
-            <th>Prix</th>
-            <th>Catégorie</th>
-            <th>Fournisseur</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for product in products %}
-        <tr>
-            <td>{{ product.id }}</td>
-            <td>{{ product.libelle }}</td>
-            <td>{{ product.price }} €</td>
-            <td>{{ product.category ? product.category.nom : '—' }}</td>
-            <td>{{ product.fournisseur ? product.fournisseur.nom : '—' }}</td>
-            <td>
-                <a href="{{ path('product_show', {'id': product.id}) }}" class="btn btn-info btn-sm">Voir</a>
-                <a href="{{ path('product_edit', {'id': product.id}) }}" class="btn btn-warning btn-sm">Modifier</a>
-            </td>
-        </tr>
-    {% else %}
-        <tr><td colspan="6">Aucun produit trouvé.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
+{# ─── Search & Filter Bar ─── #}
+<div class="table-card mb-4">
+    <div class="card-body" style="padding:1rem 1.5rem">
+        <form method="get" action="{{ path('product_index') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label" style="font-size:0.8rem;color:var(--text-muted)">Recherche</label>
+                    <div class="position-relative">
+                        <i class="bi bi-search position-absolute" style="left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem"></i>
+                        <input type="text" name="search" class="form-control" style="padding-left:2.2rem" placeholder="Rechercher un produit..." value="{{ search }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" style="font-size:0.8rem;color:var(--text-muted)">Catégorie</label>
+                    <select name="category" class="form-select">
+                        <option value="">Toutes les catégories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}" {{ categoryId == cat.id ? 'selected' }}>{{ cat.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" style="font-size:0.8rem;color:var(--text-muted)">Fournisseur</label>
+                    <select name="fournisseur" class="form-select">
+                        <option value="">Tous les fournisseurs</option>
+                        {% for f in fournisseurs %}
+                            <option value="{{ f.id }}" {{ fournisseurId == f.id ? 'selected' }}>{{ f.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i>Filtrer</button>
+                    <a href="{{ path('product_index') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ─── Products Table ─── #}
+<div class="table-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:56px">Image</th>
+                        <th>Nom</th>
+                        <th>Prix</th>
+                        <th>Stock</th>
+                        <th>Catégorie</th>
+                        <th>Fournisseur</th>
+                        <th>Date</th>
+                        <th style="width:120px" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>
+                            {% if product.image %}
+                                <img src="{{ asset('uploads/' ~ product.image) }}" class="img-thumb" alt="{{ product.libelle }}">
+                            {% else %}
+                                <div class="img-placeholder"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('product_show', {id: product.id}) }}" class="fw-semibold text-decoration-none" style="color:var(--text-primary)">{{ product.libelle }}</a>
+                            {% if product.description %}
+                                <div style="font-size:0.78rem;color:var(--text-muted)">{{ product.description|u.truncate(50) }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="fw-semibold">{{ product.price|number_format(2, ',', ' ') }} DT</td>
+                        <td>
+                            {% if product.stock == 0 %}
+                                <span class="badge-stock-out">Rupture</span>
+                            {% elseif product.stock <= 5 %}
+                                <span class="badge-stock-low">{{ product.stock }}</span>
+                            {% else %}
+                                <span class="badge-stock-ok">{{ product.stock }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if product.category %}
+                                <span class="badge-purple">{{ product.category.nom }}</span>
+                            {% else %}
+                                <span style="color:var(--text-muted)">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-secondary)">{{ product.fournisseur ? product.fournisseur.nom : '—' }}</td>
+                        <td style="font-size:0.78rem;color:var(--text-muted)">
+                            {{ product.createdAt ? product.createdAt|date('d/m/Y') : '—' }}
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ path('product_show', {id: product.id}) }}" class="btn-icon" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ path('product_edit', {id: product.id}) }}" class="btn-icon btn-icon-warning" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" action="{{ path('product_delete', {id: product.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce produit ?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
+                                    <button class="btn-icon btn-icon-danger" title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5" style="color:var(--text-muted)">
+                            <i class="bi bi-inbox" style="font-size:2.5rem"></i>
+                            <p class="mt-2 mb-0">Aucun produit trouvé</p>
+                            {% if search or categoryId or fournisseurId %}
+                                <a href="{{ path('product_index') }}" class="btn btn-sm btn-outline-primary mt-2">Réinitialiser les filtres</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ─── Pagination ─── #}
+    {% if totalPages > 1 %}
+    <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center px-4 py-3" style="border-color:var(--border-color)!important">
+        <small style="color:var(--text-muted)">Page {{ currentPage }} sur {{ totalPages }}</small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {{ currentPage <= 1 ? 'disabled' }}">
+                    <a class="page-link" href="{{ path('product_index', {page: currentPage - 1, search: search, category: categoryId, fournisseur: fournisseurId}) }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% for i in 1..totalPages %}
+                    {% if i >= currentPage - 2 and i <= currentPage + 2 %}
+                        <li class="page-item {{ i == currentPage ? 'active' }}">
+                            <a class="page-link" href="{{ path('product_index', {page: i, search: search, category: categoryId, fournisseur: fournisseurId}) }}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {{ currentPage >= totalPages ? 'disabled' }}">
+                    <a class="page-link" href="{{ path('product_index', {page: currentPage + 1, search: search, category: categoryId, fournisseur: fournisseurId}) }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

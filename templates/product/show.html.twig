@@ -1,15 +1,117 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ product.libelle }}{% endblock %}
+{% block title %}{{ product.libelle }} — StockManager Pro{% endblock %}
 
 {% block body %}
-<h2>{{ product.libelle }}</h2>
-<p>Prix : {{ product.price }} €</p>
-<p>Catégorie : {{ product.category ? product.category.nom : 'Aucune' }}</p>
-<p>Fournisseur : {{ product.fournisseur ? product.fournisseur.nom : 'Aucun' }}</p>
-<a href="{{ path('product_index') }}" class="btn btn-secondary">Retour</a>
-<form method="post" action="{{ path('product_delete', {'id': product.id}) }}" style="display:inline;">
-    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
-    <button class="btn btn-danger">Supprimer</button>
-</form>
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1" style="color:var(--text-primary)">{{ product.libelle }}</h4>
+                <p class="mb-0" style="font-size:0.875rem;color:var(--text-muted)">Détails du produit #{{ product.id }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('product_edit', {id: product.id}) }}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-1"></i> Modifier
+                </a>
+                <a href="{{ path('product_index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Retour
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            {# Image Column #}
+            <div class="col-md-4">
+                <div class="form-card text-center">
+                    {% if product.image %}
+                        <img src="{{ asset('uploads/' ~ product.image) }}" class="rounded-3 mb-3" style="width:100%;max-height:300px;object-fit:cover" alt="{{ product.libelle }}">
+                    {% else %}
+                        <div class="rounded-3 d-flex align-items-center justify-content-center mb-3" style="width:100%;height:200px;background:var(--bg-body)">
+                            <i class="bi bi-image text-muted" style="font-size:3rem"></i>
+                        </div>
+                    {% endif %}
+
+                    {# Stock badge #}
+                    <div class="mt-2">
+                        {% if product.stock == 0 %}
+                            <span class="badge badge-stock-out fs-6 px-3 py-2">Rupture de stock</span>
+                        {% elseif product.stock <= 5 %}
+                            <span class="badge badge-stock-low fs-6 px-3 py-2">Stock bas : {{ product.stock }}</span>
+                        {% else %}
+                            <span class="badge badge-stock-ok fs-6 px-3 py-2">En stock : {{ product.stock }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# Details Column #}
+            <div class="col-md-8">
+                <div class="form-card">
+                    <h5 class="fw-bold mb-3" style="color:var(--text-primary)">Informations du produit</h5>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">NOM</div>
+                            <div class="fw-semibold">{{ product.libelle }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">PRIX</div>
+                            <div class="fw-semibold fs-5" style="color:var(--primary)">{{ product.price|number_format(2, ',', ' ') }} DT</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">CATÉGORIE</div>
+                            <div class="fw-semibold">
+                                {% if product.category %}
+                                    <a href="{{ path('category_show', {id: product.category.id}) }}" class="text-decoration-none">
+                                        <span class="badge-purple">{{ product.category.nom }}</span>
+                                    </a>
+                                {% else %}
+                                    <span style="color:var(--text-muted)">Non assignée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">FOURNISSEUR</div>
+                            <div class="fw-semibold">
+                                {% if product.fournisseur %}
+                                    <a href="{{ path('fournisseur_show', {id: product.fournisseur.id}) }}" class="text-decoration-none" style="color:var(--primary)">{{ product.fournisseur.nom }}</a>
+                                {% else %}
+                                    <span style="color:var(--text-muted)">Non assigné</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">CRÉÉ LE</div>
+                            <div>{{ product.createdAt ? product.createdAt|date('d/m/Y à H:i') : '—' }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">MODIFIÉ LE</div>
+                            <div>{{ product.updatedAt ? product.updatedAt|date('d/m/Y à H:i') : '—' }}</div>
+                        </div>
+                        {% if product.description %}
+                        <div class="col-12">
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">DESCRIPTION</div>
+                            <div>{{ product.description|nl2br }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between">
+                        <form method="post" action="{{ path('product_delete', {id: product.id}) }}" onsubmit="return confirm('Supprimer ce produit ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i> Supprimer
+                            </button>
+                        </form>
+                        <a href="{{ path('product_edit', {id: product.id}) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-1"></i> Modifier
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

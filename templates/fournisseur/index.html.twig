@@ -1,42 +1,127 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Liste des fournisseurs{% endblock %}
+{% block title %}Fournisseurs — StockManager Pro{% endblock %}
 
 {% block body %}
-<h1>Liste des fournisseurs</h1>
-<a href="{{ path('fournisseur_new') }}" class="btn btn-primary mb-3">Ajouter un fournisseur</a>
+{# ─── Page Header ─── #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color:var(--text-primary)">Fournisseurs</h4>
+        <p class="mb-0" style="font-size:0.875rem;color:var(--text-muted)">{{ totalFournisseurs }} fournisseur{{ totalFournisseurs > 1 ? 's' : '' }} au total</p>
+    </div>
+    <a href="{{ path('fournisseur_new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nouveau fournisseur
+    </a>
+</div>
 
-<table class="table table-striped table-bordered">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nom</th>
-            <th>Email</th>
-            <th>Téléphone</th>
-            <th>Nb Produits</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for fournisseur in fournisseurs %}
-        <tr>
-            <td>{{ fournisseur.id }}</td>
-            <td>{{ fournisseur.nom }}</td>
-            <td>{{ fournisseur.email ?? '—' }}</td>
-            <td>{{ fournisseur.telephone ?? '—' }}</td>
-            <td>{{ fournisseur.products|length }}</td>
-            <td>
-                <a href="{{ path('fournisseur_show', {id: fournisseur.id}) }}" class="btn btn-info btn-sm">Voir produits</a>
-                <a href="{{ path('fournisseur_edit', {id: fournisseur.id}) }}" class="btn btn-warning btn-sm">Modifier</a>
-                <form method="post" action="{{ path('fournisseur_delete', {id: fournisseur.id}) }}" style="display:inline;">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ fournisseur.id) }}">
-                    <button class="btn btn-danger btn-sm" onclick="return confirm('Supprimer ?')">Supprimer</button>
-                </form>
-            </td>
-        </tr>
-    {% else %}
-        <tr><td colspan="6">Aucun fournisseur trouvé.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
+{# ─── Search Bar ─── #}
+<div class="table-card mb-4">
+    <div class="card-body" style="padding:1rem 1.5rem">
+        <form method="get" action="{{ path('fournisseur_index') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <div class="position-relative">
+                        <i class="bi bi-search position-absolute" style="left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem"></i>
+                        <input type="text" name="search" class="form-control" style="padding-left:2.2rem" placeholder="Rechercher un fournisseur..." value="{{ search }}">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i>Filtrer</button>
+                    <a href="{{ path('fournisseur_index') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ─── Fournisseurs Table ─── #}
+<div class="table-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Adresse</th>
+                        <th>Produits</th>
+                        <th style="width:120px" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for fournisseur in fournisseurs %}
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="{{ path('fournisseur_show', {id: fournisseur.id}) }}" class="text-decoration-none" style="color:var(--text-primary)">{{ fournisseur.nom }}</a>
+                        </td>
+                        <td>
+                            {% if fournisseur.email %}
+                                <a href="mailto:{{ fournisseur.email }}" class="text-decoration-none" style="color:var(--primary)">{{ fournisseur.email }}</a>
+                            {% else %}
+                                <span style="color:var(--text-muted)">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-secondary)">{{ fournisseur.telephone ?? '—' }}</td>
+                        <td>
+                            {% if fournisseur.adresse %}
+                                <span title="{{ fournisseur.adresse }}" style="color:var(--text-secondary)">{{ fournisseur.adresse|u.truncate(30) }}</span>
+                            {% else %}
+                                <span style="color:var(--text-muted)">—</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge-purple">{{ fournisseur.products|length }}</span></td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ path('fournisseur_show', {id: fournisseur.id}) }}" class="btn-icon" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ path('fournisseur_edit', {id: fournisseur.id}) }}" class="btn-icon btn-icon-warning" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" action="{{ path('fournisseur_delete', {id: fournisseur.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce fournisseur ?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ fournisseur.id) }}">
+                                    <button class="btn-icon btn-icon-danger" title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5" style="color:var(--text-muted)">
+                            <i class="bi bi-truck" style="font-size:2.5rem"></i>
+                            <p class="mt-2 mb-0">Aucun fournisseur trouvé</p>
+                            <a href="{{ path('fournisseur_new') }}" class="btn btn-sm btn-primary mt-2">Ajouter un fournisseur</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ─── Pagination ─── #}
+    {% if totalPages > 1 %}
+    <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center px-4 py-3" style="border-color:var(--border-color)!important">
+        <small style="color:var(--text-muted)">Page {{ currentPage }} sur {{ totalPages }}</small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {{ currentPage <= 1 ? 'disabled' }}">
+                    <a class="page-link" href="{{ path('fournisseur_index', {page: currentPage - 1, search: search}) }}"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                {% for i in 1..totalPages %}
+                    <li class="page-item {{ i == currentPage ? 'active' }}">
+                        <a class="page-link" href="{{ path('fournisseur_index', {page: i, search: search}) }}">{{ i }}</a>
+                    </li>
+                {% endfor %}
+                <li class="page-item {{ currentPage >= totalPages ? 'disabled' }}">
+                    <a class="page-link" href="{{ path('fournisseur_index', {page: currentPage + 1, search: search}) }}"><i class="bi bi-chevron-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

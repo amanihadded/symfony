@@ -5,7 +5,9 @@ namespace App\Entity;
 use App\Repository\FournisseurRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: FournisseurRepository::class)]
 class Fournisseur
@@ -14,13 +16,19 @@ class Fournisseur
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Le nom du fournisseur est obligatoire.')]
+    #[Assert\Length(max: 255)]
     private ?string $nom = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Email(message: 'L\'email n\'est pas valide.')]
     private ?string $email = null;
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $telephone = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $adresse = null;
 
     /** @var Collection<int, Product> */
     #[ORM\OneToMany(targetEntity: Product::class, mappedBy: 'fournisseur')]
@@ -74,6 +82,17 @@ class Fournisseur
         return $this;
     }
 
+    public function getAdresse(): ?string
+    {
+        return $this->adresse;
+    }
+
+    public function setAdresse(?string $adresse): self
+    {
+        $this->adresse = $adresse;
+        return $this;
+    }
+
     /** @return Collection<int, Product> */
     public function getProducts(): Collection
     {
@@ -99,3 +118,5 @@ class Fournisseur
         return $this;
     }
 }
+    
+

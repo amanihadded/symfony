@@ -1,30 +1,504 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Symfony CRUD{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}StockManager Pro{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>📦</text></svg>">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        {% block stylesheets %}
-        {% endblock %}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        {% block stylesheets %}{% endblock %}
+        <style>
+            :root {
+                --sidebar-width: 72px;
+                --sidebar-expanded: 240px;
+                --primary: #7c3aed;
+                --primary-light: #ede9fe;
+                --primary-dark: #5b21b6;
+                --accent: #8b5cf6;
+                --bg-body: #ffffff;
+                --bg-card: #ffffff;
+                --text-primary: #1e1b4b;
+                --text-secondary: #6b7280;
+                --text-muted: #9ca3af;
+                --border-color: #e5e7eb;
+                --success: #10b981;
+                --success-light: #d1fae5;
+                --warning: #f59e0b;
+                --warning-light: #fef3c7;
+                --danger: #ef4444;
+                --danger-light: #fee2e2;
+                --info: #06b6d4;
+                --info-light: #cffafe;
+            }
 
+            * { box-sizing: border-box; }
+            body {
+                background-color: var(--bg-body);
+                font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+                color: var(--text-primary);
+                margin: 0;
+            }
+
+            /* ─── Narrow Icon Sidebar ─── */
+            .sidebar {
+                position: fixed; top: 0; left: 0; bottom: 0;
+                width: var(--sidebar-width);
+                background: var(--bg-card);
+                border-right: 1px solid var(--border-color);
+                z-index: 1040;
+                display: flex; flex-direction: column;
+                align-items: center;
+                padding: 1rem 0;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow: hidden;
+            }
+            .sidebar-brand {
+                width: 44px; height: 44px;
+                background: linear-gradient(135deg, var(--primary), var(--accent));
+                border-radius: 14px;
+                display: flex; align-items: center; justify-content: center;
+                color: #fff; font-size: 1.2rem;
+                margin-bottom: 1.5rem;
+                flex-shrink: 0;
+                text-decoration: none;
+                box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+            }
+            .sidebar-brand:hover { transform: scale(1.05); color: #fff; }
+
+            .sidebar-nav {
+                display: flex; flex-direction: column;
+                align-items: center; gap: 0.25rem;
+                width: 100%; padding: 0;
+                flex-grow: 1;
+            }
+            .sidebar-nav .nav-link {
+                position: relative;
+                width: 44px; height: 44px;
+                border-radius: 12px;
+                display: flex; align-items: center; justify-content: center;
+                color: var(--text-secondary);
+                font-size: 1.15rem;
+                transition: all 0.2s ease;
+                text-decoration: none;
+            }
+            .sidebar-nav .nav-link:hover {
+                background: var(--primary-light);
+                color: var(--primary);
+            }
+            .sidebar-nav .nav-link.active {
+                background: var(--primary);
+                color: #fff;
+                box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+            }
+            .sidebar-nav .nav-link .nav-tooltip {
+                position: absolute;
+                left: calc(100% + 12px);
+                top: 50%; transform: translateY(-50%);
+                background: var(--text-primary);
+                color: #fff;
+                padding: 0.35rem 0.75rem;
+                border-radius: 8px;
+                font-size: 0.75rem;
+                white-space: nowrap;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s;
+                z-index: 1050;
+            }
+            .sidebar-nav .nav-link:hover .nav-tooltip { opacity: 1; }
+
+            .sidebar-divider {
+                width: 32px; height: 1px;
+                background: var(--border-color);
+                margin: 0.5rem 0;
+            }
+
+            /* ─── Main Content ─── */
+            .main-content {
+                margin-left: var(--sidebar-width);
+                min-height: 100vh;
+                display: flex; flex-direction: column;
+            }
+
+            /* ─── Top Navbar ─── */
+            .top-navbar {
+                background: var(--bg-card);
+                padding: 0;
+                border-bottom: 1px solid var(--border-color);
+                position: sticky; top: 0; z-index: 1020;
+            }
+            .top-navbar-inner {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 0 2rem;
+                height: 60px;
+            }
+            .top-navbar .page-title {
+                font-size: 1rem; font-weight: 600;
+                color: var(--text-primary); margin: 0;
+            }
+            .top-navbar .page-subtitle {
+                font-size: 0.78rem; color: var(--text-muted); margin: 0;
+            }
+
+            .top-navbar-actions {
+                display: flex; align-items: center; gap: 1rem;
+            }
+            .top-navbar-actions .search-box {
+                position: relative;
+            }
+            .top-navbar-actions .search-box input {
+                background: var(--bg-body);
+                border: 1px solid var(--border-color);
+                border-radius: 10px;
+                padding: 0.45rem 0.85rem 0.45rem 2.2rem;
+                font-size: 0.8rem;
+                width: 220px;
+                transition: all 0.2s;
+                color: var(--text-primary);
+            }
+            .top-navbar-actions .search-box input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+                width: 280px;
+            }
+            .top-navbar-actions .search-box i {
+                position: absolute; left: 0.75rem; top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-muted); font-size: 0.85rem;
+            }
+            .navbar-icon-btn {
+                width: 36px; height: 36px;
+                border-radius: 10px;
+                border: 1px solid var(--border-color);
+                background: var(--bg-card);
+                display: flex; align-items: center; justify-content: center;
+                color: var(--text-secondary);
+                font-size: 1rem;
+                transition: all 0.2s;
+                cursor: pointer;
+            }
+            .navbar-icon-btn:hover {
+                background: var(--primary-light);
+                color: var(--primary);
+                border-color: var(--primary-light);
+            }
+            .user-avatar {
+                width: 36px; height: 36px;
+                border-radius: 10px;
+                background: linear-gradient(135deg, var(--primary), var(--accent));
+                color: #fff;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 0.8rem; font-weight: 600;
+            }
+
+            /* ─── Content Area ─── */
+            .content-wrapper { padding: 1.5rem 2rem; flex-grow: 1; }
+
+            /* ─── Stat Cards ─── */
+            .stat-card {
+                border: 1px solid var(--border-color);
+                border-radius: 16px;
+                background: var(--bg-card);
+                transition: all 0.3s ease;
+                overflow: hidden;
+            }
+            .stat-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 12px 24px rgba(124, 58, 237, 0.08);
+                border-color: var(--primary-light);
+            }
+            .stat-card .card-body { padding: 1.25rem 1.5rem; }
+            .stat-card .stat-icon {
+                width: 48px; height: 48px; border-radius: 14px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.2rem;
+            }
+            .stat-card .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+            .stat-card .stat-label {
+                font-size: 0.78rem; color: var(--text-muted);
+                text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;
+            }
+            .stat-card .stat-trend {
+                font-size: 0.75rem; font-weight: 600;
+                display: inline-flex; align-items: center; gap: 0.2rem;
+                padding: 0.15rem 0.5rem; border-radius: 20px;
+            }
+            .stat-trend-up { background: var(--success-light); color: var(--success); }
+            .stat-trend-down { background: var(--danger-light); color: var(--danger); }
+
+            .bg-primary-light { background-color: var(--primary-light); color: var(--primary); }
+            .bg-success-light { background-color: var(--success-light); color: var(--success); }
+            .bg-warning-light { background-color: var(--warning-light); color: var(--warning); }
+            .bg-info-light { background-color: var(--info-light); color: var(--info); }
+            .bg-danger-light { background-color: var(--danger-light); color: var(--danger); }
+
+            /* ─── Tables ─── */
+            .table-card {
+                background: var(--bg-card);
+                border-radius: 16px;
+                border: 1px solid var(--border-color);
+                overflow: hidden;
+            }
+            .table-card .card-header {
+                background: var(--bg-card);
+                border-bottom: 1px solid var(--border-color);
+                padding: 1rem 1.5rem;
+                display: flex; align-items: center; justify-content: space-between;
+            }
+            .table-card .card-header h5 { margin: 0; font-weight: 600; font-size: 0.95rem; color: var(--text-primary); }
+            .table thead th {
+                background: #faf9ff;
+                font-size: 0.72rem;
+                text-transform: uppercase; letter-spacing: 0.6px;
+                color: var(--text-muted);
+                font-weight: 600;
+                border-bottom: 1px solid var(--border-color);
+                padding: 0.75rem 1rem;
+            }
+            .table tbody td {
+                padding: 0.85rem 1rem; vertical-align: middle;
+                font-size: 0.875rem; color: var(--text-primary);
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .table tbody tr:last-child td { border-bottom: none; }
+            .table tbody tr { transition: background 0.15s; }
+            .table tbody tr:hover { background: #faf9ff; }
+
+            /* Image thumbnails */
+            .img-thumb {
+                width: 40px; height: 40px; border-radius: 10px;
+                object-fit: cover; border: 2px solid var(--border-color);
+            }
+            .img-placeholder {
+                width: 40px; height: 40px; border-radius: 10px;
+                background: var(--bg-body);
+                display: flex; align-items: center; justify-content: center;
+                color: var(--text-muted); font-size: 1rem;
+            }
+
+            /* ─── Status Badges ─── */
+            .badge-stock-ok {
+                background: var(--success-light); color: #065f46;
+                font-weight: 500; font-size: 0.75rem;
+                padding: 0.35rem 0.75rem; border-radius: 20px;
+            }
+            .badge-stock-low {
+                background: var(--warning-light); color: #92400e;
+                font-weight: 500; font-size: 0.75rem;
+                padding: 0.35rem 0.75rem; border-radius: 20px;
+            }
+            .badge-stock-out {
+                background: var(--danger-light); color: #991b1b;
+                font-weight: 500; font-size: 0.75rem;
+                padding: 0.35rem 0.75rem; border-radius: 20px;
+            }
+            .badge-purple {
+                background: var(--primary-light); color: var(--primary);
+                font-weight: 500; font-size: 0.75rem;
+                padding: 0.35rem 0.75rem; border-radius: 20px;
+            }
+
+            /* ─── Forms ─── */
+            .form-card {
+                background: var(--bg-card);
+                border-radius: 16px;
+                border: 1px solid var(--border-color);
+                padding: 2rem;
+            }
+            .form-control, .form-select {
+                border-radius: 10px;
+                border-color: var(--border-color);
+                font-size: 0.875rem;
+                padding: 0.55rem 0.85rem;
+            }
+            .form-control:focus, .form-select:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+            }
+            .form-label { font-weight: 500; font-size: 0.85rem; color: var(--text-primary); }
+
+            /* ─── Buttons ─── */
+            .btn-primary {
+                background: var(--primary); border-color: var(--primary);
+                border-radius: 10px; font-weight: 500;
+                font-size: 0.875rem;
+                padding: 0.5rem 1.25rem;
+                box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
+                transition: all 0.2s;
+            }
+            .btn-primary:hover {
+                background: var(--primary-dark); border-color: var(--primary-dark);
+                box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+                transform: translateY(-1px);
+            }
+            .btn-outline-primary {
+                color: var(--primary); border-color: var(--primary);
+                border-radius: 10px; font-weight: 500; font-size: 0.875rem;
+            }
+            .btn-outline-primary:hover { background: var(--primary); border-color: var(--primary); }
+            .btn-outline-secondary {
+                border-radius: 10px; font-size: 0.875rem; font-weight: 500;
+                border-color: var(--border-color); color: var(--text-secondary);
+            }
+            .btn-outline-secondary:hover { background: #f3f4f6; border-color: var(--border-color); color: var(--text-primary); }
+
+            /* ─── Pagination ─── */
+            .pagination .page-link {
+                border-radius: 10px; margin: 0 2px;
+                border: 1px solid var(--border-color);
+                color: var(--text-secondary); font-size: 0.8rem;
+                padding: 0.4rem 0.75rem;
+            }
+            .pagination .page-link:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary-light); }
+            .pagination .page-item.active .page-link {
+                background: var(--primary); border-color: var(--primary);
+                box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
+            }
+
+            /* ─── Action Buttons ─── */
+            .btn-action {
+                padding: 0.35rem 0.55rem; font-size: 0.8rem;
+                border-radius: 8px; border: none;
+            }
+            .btn-icon {
+                width: 32px; height: 32px; padding: 0;
+                display: inline-flex; align-items: center; justify-content: center;
+                border-radius: 8px; border: 1px solid var(--border-color);
+                background: var(--bg-card); color: var(--text-secondary);
+                transition: all 0.2s; font-size: 0.85rem;
+            }
+            .btn-icon:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary-light); }
+            .btn-icon-danger:hover { background: var(--danger-light); color: var(--danger); border-color: var(--danger-light); }
+            .btn-icon-warning:hover { background: var(--warning-light); color: var(--warning); border-color: var(--warning-light); }
+
+            /* ─── Chart Card ─── */
+            .chart-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 16px;
+                padding: 1.5rem;
+            }
+            .chart-card h6 {
+                font-weight: 600; font-size: 0.9rem;
+                color: var(--text-primary); margin-bottom: 1rem;
+            }
+
+            /* ─── Flash Messages ─── */
+            .alert {
+                border-radius: 12px; border: none;
+                font-size: 0.875rem; font-weight: 500;
+            }
+            .alert-success { background: var(--success-light); color: #065f46; }
+            .alert-danger { background: var(--danger-light); color: #991b1b; }
+            .alert-warning { background: var(--warning-light); color: #92400e; }
+
+            /* ─── Scrollbar ─── */
+            ::-webkit-scrollbar { width: 6px; }
+            ::-webkit-scrollbar-track { background: transparent; }
+            ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+            ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+            /* ─── Responsive ─── */
+            @media (max-width: 991.98px) {
+                .sidebar {
+                    transform: translateX(-100%);
+                    width: var(--sidebar-expanded);
+                    padding: 1rem;
+                }
+                .sidebar.show { transform: translateX(0); }
+                .sidebar.show ~ .main-content { opacity: 0.5; }
+                .main-content { margin-left: 0; }
+                .content-wrapper { padding: 1rem; }
+                .top-navbar-inner { padding: 0 1rem; }
+                .top-navbar-actions .search-box input { width: 150px; }
+                .top-navbar-actions .search-box input:focus { width: 180px; }
+            }
+            @media (max-width: 575.98px) {
+                .top-navbar-actions .search-box { display: none; }
+            }
+        </style>
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
     <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-            <div class="container">
-                <a class="navbar-brand" href="/">Symfony CRUD</a>
-                <div class="navbar-nav">
-                    <a class="nav-link" href="{{ path('product_index') }}">Produits</a>
-                    <a class="nav-link" href="{{ path('category_index') }}">Catégories</a>
-                    <a class="nav-link" href="{{ path('fournisseur_index') }}">Fournisseurs</a>
+        {# ─── Narrow Icon Sidebar ─── #}
+        <aside class="sidebar" id="sidebar">
+            <a href="{{ path('dashboard') }}" class="sidebar-brand" title="StockManager">
+                <i class="bi bi-box-seam-fill"></i>
+            </a>
+
+            <nav class="sidebar-nav">
+                <a href="{{ path('dashboard') }}" class="nav-link {{ app.request.attributes.get('_route') == 'dashboard' ? 'active' }}" title="Tableau de bord">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span class="nav-tooltip">Tableau de bord</span>
+                </a>
+                <a href="{{ path('product_index') }}" class="nav-link {{ app.request.attributes.get('_route') starts with 'product_' ? 'active' }}" title="Produits">
+                    <i class="bi bi-box-fill"></i>
+                    <span class="nav-tooltip">Produits</span>
+                </a>
+                <a href="{{ path('category_index') }}" class="nav-link {{ app.request.attributes.get('_route') starts with 'category_' ? 'active' }}" title="Catégories">
+                    <i class="bi bi-tags-fill"></i>
+                    <span class="nav-tooltip">Catégories</span>
+                </a>
+                <a href="{{ path('fournisseur_index') }}" class="nav-link {{ app.request.attributes.get('_route') starts with 'fournisseur_' ? 'active' }}" title="Fournisseurs">
+                    <i class="bi bi-truck"></i>
+                    <span class="nav-tooltip">Fournisseurs</span>
+                </a>
+
+              
+            </nav>
+        </aside>
+
+        {# ─── Main Content ─── #}
+        <div class="main-content">
+            {# ─── Top Navbar ─── #}
+            <div class="top-navbar">
+                <div class="top-navbar-inner">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="navbar-icon-btn d-lg-none" onclick="document.getElementById('sidebar').classList.toggle('show')">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <div>
+                            <p class="page-title">{% block page_title %}StockManager Pro{% endblock %}</p>
+                            <p class="page-subtitle">{{ "now"|date("d M Y") }}</p>
+                        </div>
+                    </div>
+                    <div class="top-navbar-actions">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" placeholder="Rechercher..." id="globalSearch">
+                        </div>
+                        <div class="navbar-icon-btn" title="Notifications">
+                            <i class="bi bi-bell"></i>
+                        </div>
+                        <div class="user-avatar" title="Admin">SM</div>
+                    </div>
                 </div>
             </div>
-        </nav>
-        <div class="container">
-            {% block body %}{% endblock %}
+
+            {# ─── Flash Messages + Body ─── #}
+            <div class="content-wrapper">
+                {% for type, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ type }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-{{ type == 'success' ? 'check-circle' : (type == 'danger' ? 'exclamation-triangle' : 'info-circle') }}-fill me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+
+                {% block body %}{% endblock %}
+            </div>
         </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        {% block page_scripts %}{% endblock %}
     </body>
 </html>

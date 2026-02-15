@@ -15,10 +15,20 @@ use Symfony\Component\Routing\Attribute\Route;
 class FournisseurController extends AbstractController
 {
     #[Route('/', name: 'fournisseur_index', methods: ['GET'])]
-    public function index(FournisseurRepository $repo): Response
+    public function index(Request $request, FournisseurRepository $repo): Response
     {
+        $page = max(1, $request->query->getInt('page', 1));
+        $search = $request->query->get('search');
+
+        $paginator = $repo->findPaginated($page, 10, $search);
+        $totalPages = (int) ceil(count($paginator) / 10);
+
         return $this->render('fournisseur/index.html.twig', [
-            'fournisseurs' => $repo->findAll(),
+            'fournisseurs' => $paginator,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalFournisseurs' => count($paginator),
+            'search' => $search,
         ]);
     }
 
@@ -32,15 +42,17 @@ class FournisseurController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($fournisseur);
             $em->flush();
+
+            $this->addFlash('success', 'Fournisseur "' . $fournisseur->getNom() . '" créé avec succès.');
             return $this->redirectToRoute('fournisseur_index');
         }
 
         return $this->render('fournisseur/new.html.twig', [
-            'form' => $form,
-        ]);
+            'form' => $form->createView(),
+        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
-    #[Route('/{id}', name: 'fournisseur_show', methods: ['GET'])]
+    #[Route('/{id}', name: 'fournisseur_show', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function show(Fournisseur $fournisseur): Response
     {
         return $this->render('fournisseur/show.html.twig', [
@@ -48,7 +60,7 @@ class FournisseurController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'fournisseur_edit', methods: ['GET', 'POST'])]
+    #[Route('/{id}/edit', name: 'fournisseur_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     public function edit(Request $request, Fournisseur $fournisseur, EntityManagerInterface $em): Response
     {
         $form = $this->createForm(FournisseurType::class, $fournisseur);
@@ -56,21 +68,28 @@ class FournisseurController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
+
+            $this->addFlash('success', 'Fournisseur "' . $fournisseur->getNom() . '" modifié avec succès.');
             return $this->redirectToRoute('fournisseur_index');
         }
 
         return $this->render('fournisseur/edit.html.twig', [
             'fournisseur' => $fournisseur,
-            'form' => $form,
-        ]);
+            'form' => $form->createView(),
+        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
-    #[Route('/{id}', name: 'fournisseur_delete', methods: ['POST'])]
+    #[Route('/{id}', name: 'fournisseur_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function delete(Request $request, Fournisseur $fournisseur, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('delete' . $fournisseur->getId(), $request->request->get('_token'))) {
+            if ($fournisseur->getProducts()->count() > 0) {
+                $this->addFlash('danger', 'Impossible de supprimer ce fournisseur : il a des produits associés.');
+                return $this->redirectToRoute('fournisseur_index');
+            }
             $em->remove($fournisseur);
             $em->flush();
+            $this->addFlash('success', 'Fournisseur supprimé avec succès.');
         }
         return $this->redirectToRoute('fournisseur_index');
     }

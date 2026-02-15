@@ -1,11 +1,76 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modifier {{ product.libelle }}{% endblock %}
+{% block title %}Modifier {{ product.libelle }} — StockManager Pro{% endblock %}
 
 {% block body %}
-<h1>Modifier le produit</h1>
-{{ form_start(form) }}
-{{ form_widget(form) }}
-{{ form_end(form) }}
-<a href="{{ path('product_index') }}">Retour à la liste</a>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1" style="color:var(--text-primary)">Modifier le produit</h4>
+                <p class="mb-0" style="font-size:0.875rem;color:var(--text-muted)">{{ product.libelle }}</p>
+            </div>
+            <a href="{{ path('product_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Retour
+            </a>
+        </div>
+
+        <div class="form-card">
+            {# Current image preview #}
+            {% if product.image %}
+            <div class="mb-4">
+                <label class="form-label">Image actuelle</label>
+                <div class="d-flex align-items-center gap-3">
+                    <img src="{{ asset('uploads/' ~ product.image) }}" style="width:100px;height:100px;object-fit:cover;border-radius:14px;border:2px solid var(--border-color)" alt="{{ product.libelle }}">
+                    <span style="font-size:0.85rem;color:var(--text-muted)">Uploadez une nouvelle image pour remplacer celle-ci.</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'enctype': 'multipart/form-data'}}) }}
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    {{ form_row(form.libelle) }}
+                </div>
+                <div class="col-md-4">
+                    {{ form_row(form.price) }}
+                </div>
+                <div class="col-12">
+                    {{ form_row(form.description) }}
+                </div>
+                <div class="col-md-4">
+                    {{ form_row(form.stock) }}
+                </div>
+                <div class="col-md-4">
+                    {{ form_row(form.category) }}
+                </div>
+                <div class="col-md-4">
+                    {{ form_row(form.fournisseur) }}
+                </div>
+                <div class="col-12">
+                    {{ form_row(form.imageFile) }}
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ path('product_index') }}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i> Enregistrer
+                </button>
+            </div>
+
+            {{ form_end(form) }}
+
+            <hr class="my-3">
+            <form method="post" action="{{ path('product_delete', {id: product.id}) }}" onsubmit="return confirm('Supprimer ce produit ?')">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
+                <button type="submit" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-trash me-1"></i> Supprimer ce produit
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
