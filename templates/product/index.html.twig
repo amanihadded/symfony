@@ -17,7 +17,7 @@
 {# ─── Search & Filter Bar ─── #}
 <div class="table-card mb-4">
     <div class="card-body" style="padding:1rem 1.5rem">
-        <form method="get" action="{{ path('product_index') }}">
+        <form method="get" action="{{ path('product_index') }}" data-turbo="false">
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label" style="font-size:0.8rem;color:var(--text-muted)">Recherche</label>

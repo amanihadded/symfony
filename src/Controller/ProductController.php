@@ -33,8 +33,8 @@ class ProductController extends AbstractController
     ): Response {
         $page = max(1, $request->query->getInt('page', 1));
         $search = $request->query->get('search');
-        $categoryId = $request->query->getInt('category') ?: null;
-        $fournisseurId = $request->query->getInt('fournisseur') ?: null;
+        $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
+        $fournisseurId = $request->query->get('fournisseur') ? (int) $request->query->get('fournisseur') : null;
 
         $paginator = $productRepository->findPaginated($page, 10, $search, $categoryId, $fournisseurId);
         $totalPages = (int) ceil(count($paginator) / 10);
