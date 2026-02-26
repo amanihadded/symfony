@@ -6,6 +6,7 @@ use App\Entity\Category;
 use App\Form\CategoryType;
 use App\Repository\CategoryRepository;
 use App\Service\ImageUploadService;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,10 +17,12 @@ use Symfony\Component\Routing\Attribute\Route;
 class CategoryController extends AbstractController
 {
     private ImageUploadService $imageUploader;
+    private NotificationService $notificationService;
 
-    public function __construct(ImageUploadService $imageUploader)
+    public function __construct(ImageUploadService $imageUploader, NotificationService $notificationService)
     {
         $this->imageUploader = $imageUploader;
+        $this->notificationService = $notificationService;
     }
 
     #[Route('/', name: 'category_index', methods: ['GET'])]
@@ -57,13 +60,15 @@ class CategoryController extends AbstractController
             $em->persist($category);
             $em->flush();
 
+            $this->notificationService->notifyCategoryCreated($category->getNom());
+
             $this->addFlash('success', 'Catégorie "' . $category->getNom() . '" créée avec succès.');
             return $this->redirectToRoute('category_index');
         }
 
         return $this->render('category/new.html.twig', [
             'form' => $form->createView(),
-        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+        ], new Response('', $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     #[Route('/{id}', name: 'category_show', requirements: ['id' => '\d+'], methods: ['GET'])]
@@ -97,7 +102,7 @@ class CategoryController extends AbstractController
         return $this->render('category/edit.html.twig', [
             'form' => $form->createView(),
             'category' => $category,
-        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+        ], new Response('', $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     #[Route('/{id}', name: 'category_delete', requirements: ['id' => '\d+'], methods: ['POST'])]

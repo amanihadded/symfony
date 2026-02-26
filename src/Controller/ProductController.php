@@ -8,6 +8,7 @@ use App\Repository\ProductRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\FournisseurRepository;
 use App\Service\ImageUploadService;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,10 +19,12 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProductController extends AbstractController
 {
     private ImageUploadService $imageUploader;
+    private NotificationService $notificationService;
 
-    public function __construct(ImageUploadService $imageUploader)
+    public function __construct(ImageUploadService $imageUploader, NotificationService $notificationService)
     {
         $this->imageUploader = $imageUploader;
+        $this->notificationService = $notificationService;
     }
 
     #[Route('/', name: 'product_index', methods: ['GET'])]
@@ -69,13 +72,18 @@ class ProductController extends AbstractController
             $em->persist($product);
             $em->flush();
 
+            $this->notificationService->notifyProductCreated($product->getLibelle());
+
             $this->addFlash('success', 'Produit "' . $product->getLibelle() . '" créé avec succès.');
             return $this->redirectToRoute('product_index');
         }
 
+        $response = new Response();
+        $response->setStatusCode($form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK);
+
         return $this->render('product/new.html.twig', [
             'form' => $form->createView(),
-        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+        ], $response);
     }
 
     #[Route('/{id}', name: 'product_show', requirements: ['id' => '\d+'], methods: ['GET'])]
@@ -107,10 +115,13 @@ class ProductController extends AbstractController
             return $this->redirectToRoute('product_index');
         }
 
+        $response = new Response();
+        $response->setStatusCode($form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK);
+
         return $this->render('product/edit.html.twig', [
             'form' => $form->createView(),
             'product' => $product,
-        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+        ], $response);
     }
 
     #[Route('/{id}', name: 'product_delete', requirements: ['id' => '\d+'], methods: ['POST'])]

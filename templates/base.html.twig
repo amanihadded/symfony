@@ -450,8 +450,25 @@
                     <span class="nav-tooltip">Fournisseurs</span>
                 </a>
 
+                <div class="sidebar-divider"></div>
+
+                <a href="{{ path('notification_index') }}" class="nav-link {{ app.request.attributes.get('_route') starts with 'notification_' ? 'active' }}" title="Notifications" style="position:relative;">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="nav-tooltip">Notifications</span>
+                    {% if unread_notifications_count > 0 %}
+                        <span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--danger);"></span>
+                    {% endif %}
+                </a>
+
               
             </nav>
+
+            {# ─── Sidebar Bottom: Logout ─── #}
+            <div class="sidebar-divider"></div>
+            <a href="{{ path('app_logout') }}" class="nav-link" title="Déconnexion" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:1.15rem;transition:all 0.2s;text-decoration:none;">
+                <i class="bi bi-box-arrow-left"></i>
+                <span class="nav-tooltip">Déconnexion</span>
+            </a>
         </aside>
 
         {# ─── Main Content ─── #}
@@ -473,10 +490,64 @@
                             <i class="bi bi-search"></i>
                             <input type="text" placeholder="Rechercher..." id="globalSearch">
                         </div>
-                        <div class="navbar-icon-btn" title="Notifications">
-                            <i class="bi bi-bell"></i>
+                        {# ─── Notification Dropdown ─── #}
+                        <div class="dropdown">
+                            <div class="navbar-icon-btn position-relative" title="Notifications" data-bs-toggle="dropdown" aria-expanded="false" role="button" id="notificationDropdown">
+                                <i class="bi bi-bell"></i>
+                                {% if unread_notifications_count > 0 %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;padding:0.2rem 0.4rem;" id="notifBadge">
+                                        {{ unread_notifications_count }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="dropdown-menu dropdown-menu-end shadow-lg" style="width:360px;border-radius:16px;border:1px solid var(--border-color);padding:0;max-height:420px;overflow:hidden;" aria-labelledby="notificationDropdown">
+                                <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;">
+                                    <h6 style="margin:0;font-weight:600;font-size:0.95rem;">Notifications</h6>
+                                    {% if unread_notifications_count > 0 %}
+                                        <a href="#" onclick="markAllRead(event)" style="font-size:0.75rem;color:var(--primary);text-decoration:none;font-weight:500;">Tout marquer lu</a>
+                                    {% endif %}
+                                </div>
+                                <div style="max-height:320px;overflow-y:auto;" id="notificationList">
+                                    {% if recent_notifications|length > 0 %}
+                                        {% for notif in recent_notifications %}
+                                            <div class="d-flex align-items-start gap-3 px-3 py-2 {{ not notif.isRead ? 'bg-light' }}" style="border-bottom:1px solid #f3f4f6;transition:background 0.15s;">
+                                                <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.9rem;
+                                                    {% if notif.type == 'category' %}background:var(--primary-light);color:var(--primary);
+                                                    {% elseif notif.type == 'product' %}background:var(--success-light);color:var(--success);
+                                                    {% elseif notif.type == 'fournisseur' %}background:var(--warning-light);color:var(--warning);
+                                                    {% else %}background:var(--info-light);color:var(--info);{% endif %}">
+                                                    <i class="bi {{ notif.icon ?? 'bi-bell-fill' }}"></i>
+                                                </div>
+                                                <div style="flex:1;min-width:0;">
+                                                    <p style="margin:0;font-size:0.82rem;color:var(--text-primary);font-weight:{{ not notif.isRead ? '600' : '400' }};">{{ notif.message }}</p>
+                                                    <p style="margin:0;font-size:0.72rem;color:var(--text-muted);margin-top:2px;">{{ notif.timeAgo }}</p>
+                                                </div>
+                                                {% if not notif.isRead %}
+                                                    <span style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:6px;"></span>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="bi bi-bell-slash" style="font-size:2rem;color:var(--text-muted);"></i>
+                                            <p style="margin:0.5rem 0 0;font-size:0.82rem;color:var(--text-muted);">Aucune notification</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if recent_notifications|length > 0 %}
+                                    <div style="padding:0.75rem;border-top:1px solid var(--border-color);text-align:center;">
+                                        <a href="{{ path('notification_index') }}" style="font-size:0.8rem;color:var(--primary);text-decoration:none;font-weight:500;">
+                                            Voir toutes les notifications <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="user-avatar" title="Admin">SM</div>
+                        {% if app.user %}
+                            <div class="user-avatar" title="{{ app.user.email }}">{{ app.user.initials }}</div>
+                        {% else %}
+                            <div class="user-avatar" title="Admin">SM</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -499,6 +570,231 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <style>
+            /* ─── Notification Toast ─── */
+            .notif-toast-container {
+                position: fixed; top: 76px; right: 24px; z-index: 9999;
+                display: flex; flex-direction: column; gap: 0.5rem;
+                pointer-events: none;
+            }
+            .notif-toast {
+                pointer-events: auto;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 14px;
+                box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+                padding: 0.85rem 1.1rem;
+                display: flex; align-items: center; gap: 0.75rem;
+                min-width: 320px; max-width: 400px;
+                animation: notifSlideIn 0.4s cubic-bezier(0.16,1,0.3,1);
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            .notif-toast.hide {
+                opacity: 0; transform: translateX(100%);
+            }
+            .notif-toast-icon {
+                width: 40px; height: 40px; border-radius: 12px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1rem; flex-shrink: 0;
+            }
+            .notif-toast-body { flex: 1; min-width: 0; }
+            .notif-toast-body p { margin: 0; }
+            .notif-toast-msg { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+            .notif-toast-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+            .notif-toast-close {
+                background: none; border: none; color: var(--text-muted);
+                font-size: 1rem; cursor: pointer; padding: 0.2rem;
+                flex-shrink: 0; transition: color 0.2s;
+            }
+            .notif-toast-close:hover { color: var(--text-primary); }
+            .notif-toast-progress {
+                position: absolute; bottom: 0; left: 0; height: 3px;
+                background: var(--primary); border-radius: 0 0 14px 14px;
+                animation: notifProgress 5s linear forwards;
+            }
+            @keyframes notifSlideIn {
+                from { opacity: 0; transform: translateX(100%); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            @keyframes notifProgress {
+                from { width: 100%; }
+                to { width: 0%; }
+            }
+            /* Notification bell animation */
+            @keyframes bellShake {
+                0% { transform: rotate(0); }
+                15% { transform: rotate(14deg); }
+                30% { transform: rotate(-14deg); }
+                45% { transform: rotate(10deg); }
+                60% { transform: rotate(-10deg); }
+                75% { transform: rotate(4deg); }
+                90% { transform: rotate(-2deg); }
+                100% { transform: rotate(0); }
+            }
+            .bell-shake i { animation: bellShake 0.6s ease-in-out; }
+            /* Badge pulse */
+            @keyframes badgePulse {
+                0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+                70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+                100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+            }
+            #notifBadge { animation: badgePulse 2s infinite; }
+        </style>
+
+        {# ─── Toast Container ─── #}
+        <div class="notif-toast-container" id="toastContainer"></div>
+
+        <script>
+            // ═══ Real-time Notification System ═══
+            const NOTIF_POLL_URL = '{{ path("notification_recent") }}';
+            const NOTIF_MARK_ALL_URL = '{{ path("notification_mark_all_read") }}';
+            const NOTIF_VIEW_ALL_URL = '{{ path("notification_index") }}';
+            let lastNotifCount = {{ unread_notifications_count }};
+            let knownNotifIds = new Set([{% for n in recent_notifications %}{{ n.id }},{% endfor %}]);
+
+            function getNotifIconStyle(type) {
+                switch(type) {
+                    case 'category': return 'background:var(--primary-light);color:var(--primary);';
+                    case 'product': return 'background:var(--success-light);color:var(--success);';
+                    case 'fournisseur': return 'background:var(--warning-light);color:var(--warning);';
+                    default: return 'background:var(--info-light);color:var(--info);';
+                }
+            }
+
+            function showNotifToast(notif) {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                toast.className = 'notif-toast';
+                toast.style.position = 'relative';
+                toast.innerHTML = `
+                    <div class="notif-toast-icon" style="${getNotifIconStyle(notif.type)}">
+                        <i class="bi ${notif.icon || 'bi-bell-fill'}"></i>
+                    </div>
+                    <div class="notif-toast-body">
+                        <p class="notif-toast-msg">${notif.message}</p>
+                        <p class="notif-toast-time">${notif.timeAgo}</p>
+                    </div>
+                    <button class="notif-toast-close" onclick="this.parentElement.classList.add('hide');setTimeout(()=>this.parentElement.remove(),300)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                    <div class="notif-toast-progress"></div>
+                `;
+                toast.addEventListener('click', (e) => {
+                    if (!e.target.closest('.notif-toast-close')) {
+                        window.location.href = NOTIF_VIEW_ALL_URL;
+                    }
+                });
+                container.prepend(toast);
+                // Auto-dismiss after 5s
+                setTimeout(() => {
+                    toast.classList.add('hide');
+                    setTimeout(() => toast.remove(), 300);
+                }, 5000);
+            }
+
+            function updateNotifBadge(count) {
+                const btn = document.getElementById('notificationDropdown');
+                let badge = document.getElementById('notifBadge');
+                // Sidebar badge
+                const sidebarDot = document.querySelector('.sidebar-nav .nav-link[title="Notifications"] span[style*="border-radius:50%"]');
+
+                if (count > 0) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.id = 'notifBadge';
+                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                        badge.style.cssText = 'font-size:0.6rem;padding:0.2rem 0.4rem;animation:badgePulse 2s infinite;';
+                        btn.appendChild(badge);
+                    }
+                    badge.textContent = count > 99 ? '99+' : count;
+                    // Bell shake
+                    if (count > lastNotifCount) {
+                        btn.classList.add('bell-shake');
+                        setTimeout(() => btn.classList.remove('bell-shake'), 700);
+                    }
+                } else {
+                    if (badge) badge.remove();
+                }
+                lastNotifCount = count;
+            }
+
+            function renderNotifDropdown(notifications, unreadCount) {
+                const list = document.getElementById('notificationList');
+                if (!list) return;
+
+                if (notifications.length === 0) {
+                    list.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-bell-slash" style="font-size:2rem;color:var(--text-muted);"></i>
+                            <p style="margin:0.5rem 0 0;font-size:0.82rem;color:var(--text-muted);">Aucune notification</p>
+                        </div>`;
+                    return;
+                }
+
+                list.innerHTML = notifications.map(n => `
+                    <div class="d-flex align-items-start gap-3 px-3 py-2 ${!n.isRead ? 'bg-light' : ''}" style="border-bottom:1px solid #f3f4f6;transition:background 0.15s;">
+                        <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.9rem;${getNotifIconStyle(n.type)}">
+                            <i class="bi ${n.icon || 'bi-bell-fill'}"></i>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <p style="margin:0;font-size:0.82rem;color:var(--text-primary);font-weight:${!n.isRead ? '600' : '400'};">${n.message}</p>
+                            <p style="margin:0;font-size:0.72rem;color:var(--text-muted);margin-top:2px;">${n.timeAgo}</p>
+                        </div>
+                        ${!n.isRead ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:6px;"></span>' : ''}
+                    </div>
+                `).join('');
+
+                // Update "Tout marquer lu" visibility
+                const header = list.parentElement.querySelector('div:first-child');
+                const markAllLink = header ? header.querySelector('a') : null;
+                if (markAllLink) {
+                    markAllLink.style.display = unreadCount > 0 ? '' : 'none';
+                }
+            }
+
+            function pollNotifications() {
+                fetch(NOTIF_POLL_URL, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    // Show toast for new notifications
+                    data.notifications.forEach(n => {
+                        if (!knownNotifIds.has(n.id) && !n.isRead) {
+                            showNotifToast(n);
+                        }
+                        knownNotifIds.add(n.id);
+                    });
+
+                    // Update badge
+                    updateNotifBadge(data.unreadCount);
+
+                    // Update dropdown content
+                    renderNotifDropdown(data.notifications, data.unreadCount);
+                })
+                .catch(() => {});
+            }
+
+            function markAllRead(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                fetch(NOTIF_MARK_ALL_URL, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(r => r.json()).then(data => {
+                    if (data.success) {
+                        updateNotifBadge(0);
+                        document.querySelectorAll('#notificationList .bg-light').forEach(el => el.classList.remove('bg-light'));
+                        document.querySelectorAll('#notificationList span[style*="border-radius:50%"]').forEach(el => el.remove());
+                        document.querySelectorAll('#notificationList p[style*="font-weight:600"]').forEach(el => el.style.fontWeight = '400');
+                    }
+                });
+            }
+
+            // Poll every 10 seconds
+            setInterval(pollNotifications, 10000);
+        </script>
         {% block page_scripts %}{% endblock %}
     </body>
 </html>
